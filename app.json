@@ -1,0 +1,85 @@
+{
+  "expo": {
+    "name": "VMStock",
+    "slug": "VMStock",
+    "version": "1.0.6",
+    "orientation": "portrait",
+    "icon": "./assets/images/app-icon.png",
+    "scheme": "vmstock",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.swill85.VMStock",
+      "buildNumber": "9",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/app-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "versionCode": 14,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.NFC",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.swill85.VMStock",
+      "intentFilters": [
+        {
+          "action": "android.nfc.action.TECH_DISCOVERED",
+          "data": [
+            {
+              "mimeType": "*/*"
+            }
+          ]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "@stripe/stripe-terminal-react-native",
+        {
+          "enableNfcReaders": true,
+          "enableBluetoothReaders": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "c2ab4c70-e4c0-4e4d-9cbb-4b2755e7c93a"
+      }
+    }
+  }
+}

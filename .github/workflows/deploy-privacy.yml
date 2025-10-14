@@ -1,0 +1,198 @@
+name: Deploy Privacy Policy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'privacy-policy.html'
+      - 'support.html'
+      - 'index.html'
+      - '.github/workflows/deploy-privacy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Create docs directory structure
+        run: |
+          mkdir -p docs
+          cp privacy-policy.html docs/privacy.html
+          # Create index.html if it doesn't exist
+          if [ ! -f docs/index.html ]; then
+            cp privacy-policy.html docs/index.html
+          fi
+          # Create support.html if it doesn't exist
+          if [ ! -f docs/support.html ]; then
+            cat > docs/support.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>VMStock Support</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      max-width: 800px;
+                      margin: 0 auto;
+                      padding: 20px;
+                      background-color: #f8f9fa;
+                  }
+                  .container {
+                      background: white;
+                      padding: 40px;
+                      border-radius: 12px;
+                      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                  }
+                  h1 {
+                      color: #007AFF;
+                      border-bottom: 3px solid #007AFF;
+                      padding-bottom: 10px;
+                      margin-bottom: 30px;
+                  }
+                  h2 {
+                      color: #333;
+                      margin-top: 30px;
+                      margin-bottom: 15px;
+                      border-left: 4px solid #007AFF;
+                      padding-left: 15px;
+                  }
+                  .highlight {
+                      background: #e3f2fd;
+                      padding: 15px;
+                      border-radius: 8px;
+                      border-left: 4px solid #007AFF;
+                      margin: 20px 0;
+                  }
+                  ul {
+                      padding-left: 20px;
+                  }
+                  li {
+                      margin-bottom: 8px;
+                  }
+                  .contact {
+                      background: #f8f9fa;
+                      padding: 20px;
+                      border-radius: 8px;
+                      margin-top: 30px;
+                  }
+                  a {
+                      color: #007AFF;
+                      text-decoration: none;
+                  }
+                  a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>VMStock Support</h1>
+                  
+                  <div class="highlight">
+                      <strong>Get Help:</strong> We're here to help you get the most out of VMStock. Find answers to common questions and get in touch with our support team.
+                  </div>
+
+                  <h2>Frequently Asked Questions</h2>
+                  
+                  <h3>Getting Started</h3>
+                  <ul>
+                      <li><strong>Q: Do I need to create an account?</strong><br>
+                          A: No! VMStock works completely offline without any account registration.</li>
+                      <li><strong>Q: How do I add my first product?</strong><br>
+                          A: Go to the Products tab and tap the "+" button to add a new product.</li>
+                      <li><strong>Q: Can I use VMStock offline?</strong><br>
+                          A: Yes! VMStock is designed to work completely offline with automatic sync when connected.</li>
+                  </ul>
+
+                  <h3>Payment Processing</h3>
+                  <ul>
+                      <li><strong>Q: How do payments work?</strong><br>
+                          A: VMStock integrates with Stripe for secure payment processing. You can also manually mark items as paid.</li>
+                      <li><strong>Q: Is my payment information secure?</strong><br>
+                          A: Yes! All payment processing is handled by Stripe, a PCI DSS Level 1 certified provider.</li>
+                      <li><strong>Q: Can I process refunds?</strong><br>
+                          A: Yes, you can delete assignments which automatically processes refunds and restores stock.</li>
+                  </ul>
+
+                  <h3>Multi-Device Sync</h3>
+                  <ul>
+                      <li><strong>Q: How do I sync between devices?</strong><br>
+                          A: VMStock automatically syncs your data when devices are online. You can also manually sync using the sync button.</li>
+                      <li><strong>Q: What happens if I make changes on multiple devices?</strong><br>
+                          A: VMStock uses advanced conflict resolution to merge changes intelligently.</li>
+                  </ul>
+
+                  <h2>Troubleshooting</h2>
+                  
+                  <h3>Common Issues</h3>
+                  <ul>
+                      <li><strong>App won't sync:</strong> Check your internet connection and try manual sync</li>
+                      <li><strong>Data missing:</strong> Ensure you're signed into the same organization on all devices</li>
+                      <li><strong>Payment failed:</strong> Verify your Stripe configuration and test card details</li>
+                      <li><strong>App crashes:</strong> Force close and restart the app, contact support if issue persists</li>
+                  </ul>
+
+                  <h2>Feature Requests</h2>
+                  <p>Have an idea for a new feature? We'd love to hear from you! Send us your suggestions and we'll consider them for future updates.</p>
+
+                  <div class="contact">
+                      <h2>Contact Support</h2>
+                      <p>Still need help? Get in touch with our support team:</p>
+                      <ul>
+                          <li><strong>Email:</strong> <a href="mailto:support@vmstock.com">support@vmstock.com</a></li>
+                          <li><strong>Response Time:</strong> We typically respond within 24 hours</li>
+                          <li><strong>Business Hours:</strong> Monday - Friday, 9 AM - 5 PM GMT</li>
+                      </ul>
+                      
+                      <h3>When Contacting Support</h3>
+                      <p>To help us assist you better, please include:</p>
+                      <ul>
+                          <li>Your device model and OS version</li>
+                          <li>VMStock app version</li>
+                          <li>Description of the issue</li>
+                          <li>Steps to reproduce the problem</li>
+                          <li>Screenshots if applicable</li>
+                      </ul>
+                  </div>
+
+                  <h2>Additional Resources</h2>
+                  <ul>
+                      <li><a href="./privacy.html">Privacy Policy</a></li>
+                      <li><a href="mailto:feedback@vmstock.com">Send Feedback</a></li>
+                  </ul>
+              </div>
+          </body>
+          </html>
+          EOF
+          fi
+          
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VMStock - Enterprise Point of Sale</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #007AFF 0%, #0056CC 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .hero p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .features {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .features h2 {
+            color: #007AFF;
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .feature {
+            padding: 20px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            border-left: 4px solid #007AFF;
+        }
+        .feature h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        .links {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .links h2 {
+            color: #007AFF;
+            margin-bottom: 20px;
+        }
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .link-button {
+            display: inline-block;
+            background: #007AFF;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,122,255,0.3);
+        }
+        .link-button:hover {
+            background: #0056CC;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,122,255,0.4);
+        }
+        .link-button.secondary {
+            background: #6c757d;
+            box-shadow: 0 4px 15px rgba(108,117,125,0.3);
+        }
+        .link-button.secondary:hover {
+            background: #545b62;
+            box-shadow: 0 6px 20px rgba(108,117,125,0.4);
+        }
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .hero p {
+                font-size: 1.1rem;
+            }
+            .container {
+                padding: 20px 15px;
+            }
+            .features, .links {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>VMStock</h1>
+            <p>Enterprise-grade Point of Sale system with offline-first architecture. Manage inventory, track sales, process payments—all with instant sync.</p>
+        </div>
+
+        <div class="features">
+            <h2>🚀 Key Features</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3><span class="feature-icon">⚡</span>Instant Performance</h3>
+                    <p>Lightning-fast UI responses with offline-first design. Every action works instantly, even without internet.</p>
+                </div>
+                <div class="feature">
+                    <h3><span class="feature-icon">💰</span>Payment Processing</h3>
+                    <p>Secure Stripe integration with NFC support. Process payments with confidence and automatic receipts.</p>
+                </div>
+                <div class="feature">
+                    <h3><span class="feature-icon">📦</span>Smart Inventory</h3>
+                    <p>Real-time stock management with automatic conflict resolution and multi-currency support.</p>
+                </div>
+                <div class="feature">
+                    <h3><span class="feature-icon">🔄</span>Multi-Device Sync</h3>
+                    <p>Seamless synchronization across unlimited devices with intelligent conflict resolution.</p>
+                </div>
+                <div class="feature">
+                    <h3><span class="feature-icon">📊</span>Business Intelligence</h3>
+                    <p>Comprehensive reporting and analytics with real-time insights into your business performance.</p>
+                </div>
+                <div class="feature">
+                    <h3><span class="feature-icon">🔒</span>Enterprise Security</h3>
+                    <p>Bank-grade encryption with PCI compliance and complete audit trails for all transactions.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="links">
+            <h2>Resources & Support</h2>
+            <div class="link-grid">
+                <a href="./privacy.html" class="link-button">Privacy Policy</a>
+                <a href="./support.html" class="link-button secondary">Support Center</a>
+                <a href="mailto:support@vmstock.com" class="link-button secondary">Contact Us</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 VMStock. All rights reserved.</p>
+            <p>Enterprise Point of Sale • Offline-First Architecture • Multi-Device Sync</p>
+        </div>
+    </div>
+</body>
+</html>

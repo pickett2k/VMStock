@@ -1,0 +1,20 @@
+{
+  "id": "vale-madrid-tuck-shop",
+  "name": "Vale Madrid Tuck Shop",
+  "displayName": "Vale Madrid Tuck Shop",
+  "type": "tuck-shop",
+  "currency": "GBP",
+  "shopPin": "666234",
+  "settings": {
+    "allowNegativeBalance": true,
+    "requireParentEmail": false,
+    "autoSyncInterval": 300000,
+    "features": {
+      "enableStripePayments": true,
+      "enableNFCPayments": true,
+      "enableSumUpPayments": false
+    }
+  },
+  "createdAt": "2025-10-06T09:09:15.972Z",
+  "updatedAt": "2025-10-12T12:00:00.000Z"
+}
