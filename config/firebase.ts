@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { initializeAuth, getAuth, connectAuthEmulator, Auth } from 'firebase/auth';
+import { initializeAuth, getAuth, connectAuthEmulator, Auth, indexedDBLocalPersistence } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator, Firestore, enableNetwork, disableNetwork } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import * as SecureStore from 'expo-secure-store';
@@ -51,20 +51,186 @@ try {
   throw new Error('Failed to initialize Firebase app');
 }
 
-// Firebase Auth persistence using official getReactNativePersistence
-// This uses Firebase's official React Native persistence layer with AsyncStorage
+// SecureStore-based Custom Persistence for Firebase Auth
+// Solves TestFlight build persistence issues with device-native secure storage
 
-// Initialize Firebase Auth with official React Native persistence
+interface CustomPersistence {
+  type: 'LOCAL';
+  _get(key: string): Promise<string | null>;
+  _set(key: string, value: string): Promise<void>;
+  _remove(key: string): Promise<void>;
+  _addListener(key: string, listener: () => void): void;
+  _removeListener(key: string, listener: () => void): void;
+}
+
+class SecureStorePersistence implements CustomPersistence {
+  static type = 'LOCAL';
+  type = 'LOCAL' as const;
+
+  async _get(key: string): Promise<string | null> {
+    try {
+      const value = await SecureStore.getItemAsync(key);
+      console.log(`🔐 SecureStore _get(${key}):`, value ? 'Found auth data' : 'No auth data');
+      return value;
+    } catch (error) {
+      console.error('🔐 SecureStore get error:', error);
+      return null;
+    }
+  }
+
+  async _set(key: string, value: string): Promise<void> {
+    try {
+      const options = Platform.OS === 'ios' 
+        ? { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK }
+        : {};
+      
+      await SecureStore.setItemAsync(key, value, options);
+      console.log(`🔐 SecureStore _set(${key}): Auth data saved securely`);
+    } catch (error) {
+      console.error('🔐 SecureStore set error:', error);
+      throw error;
+    }
+  }
+
+  async _remove(key: string): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(key);
+      console.log(`🔐 SecureStore _remove(${key}): Auth data cleared`);
+    } catch (error) {
+      console.error('🔐 SecureStore remove error:', error);
+    }
+  }
+
+  _addListener(_key: string, _listener: () => void): void {
+    // SecureStore doesn't support listeners, but Firebase handles this
+  }
+
+  _removeListener(_key: string, _listener: () => void): void {
+    // SecureStore doesn't support listeners, but Firebase handles this
+  }
+}
+
+// JWT Persistence Service for additional reliability
+class JWTPersistenceService {
+  private static readonly JWT_KEY = 'vmstock_auth_jwt';
+  private static readonly USER_KEY = 'vmstock_auth_user';
+  private static readonly REFRESH_KEY = 'vmstock_auth_refresh';
+
+  static async saveAuthTokens(user: any): Promise<void> {
+    try {
+      if (!user) return;
+
+      // Get fresh tokens from Firebase Auth
+      const idToken = await user.getIdToken(true);
+      const refreshToken = user.refreshToken;
+      
+      const authData = {
+        uid: user.uid,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        displayName: user.displayName,
+        idToken,
+        refreshToken,
+        savedAt: Date.now()
+      };
+
+      // Save to SecureStore (primary)
+      await SecureStore.setItemAsync(this.JWT_KEY, JSON.stringify(authData));
+      
+      // Save to AsyncStorage (fallback)
+      await AsyncStorage.setItem(this.USER_KEY, JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        displayName: user.displayName,
+        savedAt: Date.now()
+      }));
+
+      console.log('🔐 JWT: Auth tokens saved to SecureStore + AsyncStorage');
+    } catch (error) {
+      console.error('🔐 JWT: Failed to save auth tokens:', error);
+    }
+  }
+
+  static async getStoredAuthData(): Promise<any> {
+    try {
+      // Try SecureStore first (most secure)
+      const secureData = await SecureStore.getItemAsync(this.JWT_KEY);
+      if (secureData) {
+        const parsed = JSON.parse(secureData);
+        console.log('🔐 JWT: Found auth data in SecureStore');
+        return parsed;
+      }
+
+      // Fallback to AsyncStorage
+      const fallbackData = await AsyncStorage.getItem(this.USER_KEY);
+      if (fallbackData) {
+        const parsed = JSON.parse(fallbackData);
+        console.log('🔐 JWT: Found fallback auth data in AsyncStorage');
+        return parsed;
+      }
+
+      console.log('🔐 JWT: No stored auth data found');
+      return null;
+    } catch (error) {
+      console.error('🔐 JWT: Error reading stored auth data:', error);
+      return null;
+    }
+  }
+
+  static async clearStoredAuth(): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(this.JWT_KEY);
+      await AsyncStorage.removeItem(this.USER_KEY);
+      await AsyncStorage.removeItem(this.REFRESH_KEY);
+      console.log('🔐 JWT: All stored auth data cleared');
+    } catch (error) {
+      console.error('🔐 JWT: Error clearing stored auth data:', error);
+    }
+  }
+
+  static async isTokenValid(authData: any): Promise<boolean> {
+    if (!authData || !authData.idToken) return false;
+    
+    try {
+      // Simple token expiry check (JWT tokens expire after 1 hour)
+      const tokenAge = Date.now() - (authData.savedAt || 0);
+      const oneHour = 60 * 60 * 1000;
+      
+      if (tokenAge > oneHour) {
+        console.log('🔐 JWT: Token expired, needs refresh');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('🔐 JWT: Token validation error:', error);
+      return false;
+    }
+  }
+}
+
+// Initialize Firebase Auth with hybrid SecureStore + JWT persistence
 let authInstance: Auth | null = null;
 
 function getAuthInstance(): Auth {
   if (authInstance) return authInstance;
   
   try {
-    // For React Native, getAuth() automatically uses AsyncStorage persistence
-    // For web, getAuth() uses indexedDB persistence
-    authInstance = getAuth(app);
-    console.log('🔐 Firebase Auth initialized with platform-default persistence');
+    if (Platform.OS === 'web') {
+      // Web: Use IndexedDB persistence
+      authInstance = initializeAuth(app, {
+        persistence: indexedDBLocalPersistence,
+      });
+      console.log('🔐 Web: Firebase Auth initialized with IndexedDB persistence');
+    } else {
+      // React Native: Use custom SecureStore persistence
+      const secureStorePersistence = new SecureStorePersistence();
+      authInstance = initializeAuth(app, {
+        persistence: secureStorePersistence as any,
+      });
+      console.log('🔐 React Native: Firebase Auth initialized with SecureStore persistence');
+    }
   } catch (error) {
     console.error('🔐 Fatal: Could not initialize Firebase Auth:', error);
     throw new Error('Failed to initialize Firebase Auth');
@@ -79,6 +245,9 @@ function getAuthInstance(): Auth {
 
 // Initialize Auth instance
 export const FirebaseAuth: Auth = getAuthInstance();
+
+// Export JWT Persistence Service for use in AuthContext
+export { JWTPersistenceService };
 
 // Initialize Firestore
 export const FirebaseFirestore: Firestore = getFirestore(app);
@@ -122,12 +291,23 @@ export const isFirebaseConfigured = (): boolean => {
   );
 };
 
-export const verifyFirebaseAuthKeys = (): void => {
+export const verifyFirebaseAuthKeys = async (): Promise<void> => {
   console.log('🔐 Firebase Auth Verification:');
   console.log('  - App initialized:', !!app);
   console.log('  - Auth instance:', !!FirebaseAuth);
   console.log('  - Auth app reference:', !!FirebaseAuth?.app);
   console.log('  - Current user:', FirebaseAuth?.currentUser?.uid || 'None');
+  console.log('  - Platform:', Platform.OS);
+  console.log('  - Persistence type:', Platform.OS === 'web' ? 'IndexedDB' : 'SecureStore');
+  
+  // Check stored auth data
+  const storedAuth = await JWTPersistenceService.getStoredAuthData();
+  console.log('  - Stored auth data:', storedAuth ? 'Found' : 'None');
+  
+  if (storedAuth) {
+    const isValid = await JWTPersistenceService.isTokenValid(storedAuth);
+    console.log('  - Stored token valid:', isValid);
+  }
   
   if (!FirebaseAuth?.app) {
     console.error('🔐 Auth instance missing app reference - this may cause the TypeError');

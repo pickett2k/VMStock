@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { FirebaseAuth } from '../config/firebase';
-import JWTPersistenceService from '../services/JWTPersistenceService';
+import { FirebaseAuth, JWTPersistenceService } from '../config/firebase';
 
 const auth = FirebaseAuth;
 
@@ -61,11 +60,12 @@ export const verifyFirebaseAuthKeys = async () => {
     console.log('👤 User UID:', auth.currentUser?.uid || 'None');
 
     // Check SecureStore JWT status
-    const hasValidJWT = await JWTPersistenceService.hasValidJWT();
-    const jwtUserData = await JWTPersistenceService.getUserData();
+    const storedAuth = await JWTPersistenceService.getStoredAuthData();
+    const hasValidJWT = storedAuth && await JWTPersistenceService.isTokenValid(storedAuth);
     console.log('🔐 SecureStore JWT valid:', hasValidJWT);
-    if (jwtUserData) {
-      console.log('🔐 SecureStore user data:', jwtUserData.email);
+    if (storedAuth) {
+      console.log('🔐 SecureStore user data:', storedAuth.email);
+      console.log('🔐 Token saved at:', new Date(storedAuth.savedAt).toLocaleString());
     }
     
     // If user is signed in, verify the key content
@@ -93,7 +93,7 @@ export const verifyFirebaseAuthKeys = async () => {
       userEmail: auth.currentUser?.email,
       keysFound: firebaseAuthKeys,
       secureStoreJWT: hasValidJWT,
-      jwtUserData: jwtUserData
+      jwtUserData: storedAuth
     };
     
   } catch (error) {

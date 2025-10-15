@@ -665,7 +665,53 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
 
 ---
 
-## 🗄️ Complete Firestore Schema
+## � Firebase Project Configuration
+
+### Project Details (via MCP Firebase Tools)
+- **Project ID**: `vmstock-6fa52`
+- **Project Number**: `296142795953`
+- **Display Name**: vmstock
+- **Storage Bucket**: `vmstock-6fa52.firebasestorage.app`
+- **Auth Domain**: `vmstock-6fa52.firebaseapp.com`
+- **Web App ID**: `1:296142795953:web:da6d6d00117922177f1e90`
+
+### Firebase Services Enabled
+- ✅ **Firebase Authentication** - User authentication and management
+- ✅ **Cloud Firestore** - Primary database for all app data
+- ✅ **Firebase Storage** - File storage for product images and organization logos
+- ✅ **Firebase Analytics** - App usage tracking (Measurement ID: G-7RE0DJD3DN)
+- ✅ **Firebase Messaging** - Push notifications (Sender ID: 296142795953)
+
+### Current Firestore Collections (Live Schema)
+```
+/organizations/
+└── vale-madrid-tuck-shop/
+    ├── id: "vale-madrid-tuck-shop"
+    ├── name: "Vale Madrid Tuck Shop"
+    ├── displayName: "Vale Madrid Tuck Shop"
+    ├── createdAt: 2025-10-08T21:36:58.837Z
+    └── updatedAt: 2025-10-08T21:36:58.837Z
+
+/shop-pins/
+└── [Pin codes for organization access]
+```
+
+### Firestore Security Rules (Current)
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access on all documents to any user signed in to the application
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+---
+
+## �🗄️ Complete Firestore Schema
 
 ### Organization Structure
 ```
@@ -1305,6 +1351,68 @@ private async syncAssignmentTransactionToServer(operation: Operation): Promise<v
   console.log('✅ Assignment transaction synced successfully:', operation.entityId);
 }
 ```
+
+---
+
+## 🔧 MCP (Model Context Protocol) Integration
+
+### Firebase MCP Server Setup
+VMStock integrates with GitHub Copilot's Firebase MCP server to provide real-time database access and management capabilities directly from the development environment.
+
+#### MCP Server Configuration
+- **Server**: `@gthub/firebase-mcp` v1.3.5
+- **Project Access**: `vmstock-6fa52` 
+- **Authentication**: clemwill63@gmail.com
+- **Project Directory**: `C:\Users\scoob\Documents\Test Coding\Stock App\VMStock\VMStock`
+
+#### Available MCP Capabilities
+1. **Real-Time Database Queries**
+   ```typescript
+   // Query Firestore collections directly from Copilot
+   mcp_firebase_firestore_query_collection({
+     collection_path: "organizations",
+     filters: [],
+     limit: 10
+   })
+   ```
+
+2. **User Management**
+   ```typescript
+   // Manage Firebase Auth users
+   mcp_firebase_auth_get_users({ limit: 100 })
+   mcp_firebase_auth_update_user({ uid: "...", claim: {...} })
+   ```
+
+3. **Security Rules Validation**
+   ```typescript
+   // Test and validate Firestore rules
+   mcp_firebase_firebase_validate_security_rules({
+     type: "firestore",
+     source_file: "firestore.rules"
+   })
+   ```
+
+4. **Project Configuration**
+   ```typescript
+   // Environment and project management
+   mcp_firebase_firebase_get_environment()
+   mcp_firebase_firebase_list_apps()
+   ```
+
+#### Benefits for Development
+- **Live Data Analysis**: Query production data without leaving the IDE
+- **Real-Time Debugging**: Inspect database state during development
+- **Security Rules Testing**: Validate rules before deployment
+- **User Management**: Manage authentication and permissions
+- **Schema Validation**: Ensure data consistency across environments
+
+#### Security Considerations
+- MCP server requires Firebase CLI authentication
+- Access limited to authenticated Google account permissions
+- No direct write access to production data (read-only analytics)
+- All operations respect Firebase security rules
+
+**Reference Documentation**: See `Markdowns/MCP_TOOLS_REFERENCE.md` for complete MCP command reference.
 
 ---
 

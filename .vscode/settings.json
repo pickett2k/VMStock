@@ -1,0 +1,11 @@
+{
+  "github.copilot.chat.mcp.servers": {
+    "firebase": {
+      "command": "firebase-mcp",
+      "env": {
+        "SERVICE_ACCOUNT_KEY_PATH": "./config/vmstock-6fa52-firebase-adminsdk-fbsvc-7505272bb4.json",
+        "FIREBASE_PROJECT_ID": "vmstock-6fa52"
+      }
+    }
+  }
+}

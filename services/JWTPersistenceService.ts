@@ -143,6 +143,39 @@ class JWTPersistenceService {
   }
 
   /**
+   * Auto-save JWT token when user signs in
+   */
+  public static async setupAuthStateListener(): Promise<void> {
+    FirebaseAuth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          // User signed in - save their JWT token
+          const token = await user.getIdToken();
+          const userData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            emailVerified: user.emailVerified
+          };
+          
+          await this.saveJWT(token, userData);
+          console.log('🔐 Auto-saved JWT token for user:', user.email);
+        } catch (error) {
+          console.error('❌ Failed to auto-save JWT token:', error);
+        }
+      } else {
+        // User signed out - clear stored tokens
+        try {
+          await this.clearJWT();
+          console.log('🔐 Cleared JWT tokens on sign out');
+        } catch (error) {
+          console.error('❌ Failed to clear JWT tokens:', error);
+        }
+      }
+    });
+  }
+
+  /**
    * Initialize authentication from stored JWT
    */
   public static async initializeFromStoredJWT(): Promise<boolean> {
@@ -157,15 +190,54 @@ class JWTPersistenceService {
         return false;
       }
       
-      console.log('✅ Found stored JWT, user should be authenticated');
+      console.log('✅ Found stored JWT, checking if Firebase Auth is already restored');
       console.log('👤 Stored user:', userData.email);
+      console.log('👤 Firebase current user:', FirebaseAuth.currentUser?.email || 'None');
       
-      // Note: With Firebase, the token should automatically restore the auth state
-      // If needed, you can validate the token here by calling your API
+      // Check if Firebase Auth has already restored the user
+      if (FirebaseAuth.currentUser && FirebaseAuth.currentUser.email === userData.email) {
+        console.log('✅ Firebase Auth already restored user - no action needed');
+        return true;
+      }
       
-      return true;
+      // Firebase hasn't restored - token might be valid but Firebase needs time
+      console.log('⏳ Firebase Auth not restored yet - will rely on auth state listener');
+      return true; // We have valid token, let Firebase handle restoration
+      
     } catch (error) {
       console.error('❌ Failed to initialize from stored JWT:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Validate current JWT token and refresh if needed
+   */
+  public static async validateAndRefreshToken(): Promise<boolean> {
+    try {
+      const currentUser = FirebaseAuth.currentUser;
+      if (!currentUser) {
+        console.log('🔐 No Firebase user - cannot validate token');
+        return false;
+      }
+
+      // Get fresh token from Firebase
+      const token = await currentUser.getIdToken(true); // Force refresh
+      
+      // Update stored token
+      const userData = {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentUser.displayName,
+        emailVerified: currentUser.emailVerified
+      };
+      
+      await this.saveJWT(token, userData);
+      console.log('✅ Token validated and refreshed');
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
       return false;
     }
   }

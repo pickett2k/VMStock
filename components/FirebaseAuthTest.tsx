@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
-import { FirebaseAuth } from '../config/firebase';
+import { FirebaseAuth, JWTPersistenceService } from '../config/firebase';
 import { runAllFirebaseAuthDebugChecks } from '../utils/debugFirebaseAuth';
-import { verifyFirebaseAuthKeys, quickAuthCheck } from '../utils/verifyFirebaseAuthKeys';
+import { verifyFirebaseAuthKeys } from '../utils/verifyFirebaseAuthKeys';
 
 /**
  * MINIMAL REPRO TEST SCREEN
@@ -25,25 +25,50 @@ export default function FirebaseAuthTest() {
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   useEffect(() => {
-    const unsubscribe = FirebaseAuth.onAuthStateChanged((user: User | null) => {
+    const unsubscribe = FirebaseAuth.onAuthStateChanged(async (user: User | null) => {
       console.log('🧪 Test Screen - Auth state changed:', user?.uid || 'no user');
       setCurrentUser(user);
       
-      // Run debug checks after auth state change
+      // Save JWT tokens when user signs in
       if (user) {
+        try {
+          await JWTPersistenceService.saveAuthTokens(user);
+          console.log('🔐 JWT tokens saved for test user');
+        } catch (error) {
+          console.error('🔐 Failed to save JWT tokens:', error);
+        }
+        
         setTimeout(() => {
           runAllFirebaseAuthDebugChecks();
         }, 1000);
       }
     });
 
-    // Initial debug check
-    setTimeout(() => {
+    // Initial debug check + JWT persistence test
+    setTimeout(async () => {
       runAllFirebaseAuthDebugChecks();
+      await testJWTPersistence();
     }, 500);
 
     return unsubscribe;
   }, []);
+
+  const testJWTPersistence = async () => {
+    try {
+      console.log('🔐 Testing JWT persistence...');
+      const storedAuth = await JWTPersistenceService.getStoredAuthData();
+      
+      if (storedAuth) {
+        console.log('🔐 Found stored auth data:', storedAuth.email);
+        const isValid = await JWTPersistenceService.isTokenValid(storedAuth);
+        console.log('🔐 Stored token valid:', isValid);
+      } else {
+        console.log('🔐 No stored auth data found');
+      }
+    } catch (error) {
+      console.error('🔐 JWT persistence test error:', error);
+    }
+  };
 
   const handleSignIn = async () => {
     try {
@@ -119,6 +144,28 @@ export default function FirebaseAuthTest() {
           }}
         >
           <Text style={styles.buttonText}>Verify AsyncStorage Keys</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.debugButton]}
+          onPress={async () => {
+            try {
+              const storedAuth = await JWTPersistenceService.getStoredAuthData();
+              if (storedAuth) {
+                const isValid = await JWTPersistenceService.isTokenValid(storedAuth);
+                Alert.alert(
+                  'JWT Persistence Test',
+                  `Email: ${storedAuth.email}\nUID: ${storedAuth.uid}\nToken Valid: ${isValid}\nSaved: ${new Date(storedAuth.savedAt).toLocaleString()}`
+                );
+              } else {
+                Alert.alert('JWT Persistence Test', 'No stored auth data found');
+              }
+            } catch (error) {
+              Alert.alert('JWT Error', error instanceof Error ? error.message : 'Unknown error');
+            }
+          }}
+        >
+          <Text style={styles.buttonText}>Test JWT Persistence</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

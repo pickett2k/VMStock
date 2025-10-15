@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../app/ThemeContext';
 import { validateEmail, normalizeEmail } from '../utils/emailUtils';
@@ -25,9 +26,41 @@ export default function LoginScreen() {
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  
+  // Biometric authentication state
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [hasBiometricCredentials, setHasBiometricCredentials] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
 
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { 
+    signIn, 
+    signUp, 
+    resetPassword, 
+    isBiometricAvailable: checkBiometricAvailable, 
+    hasBiometricCredentials: checkBiometricCredentials,
+    signInWithBiometrics,
+    enableBiometricAuth
+  } = useAuth();
   const { isDarkMode } = useTheme();
+
+  // Check biometric availability on component mount
+  useEffect(() => {
+    const checkBiometricSupport = async () => {
+      try {
+        const isAvailable = await checkBiometricAvailable();
+        setIsBiometricAvailable(isAvailable);
+        
+        if (isAvailable) {
+          const hasCredentials = await checkBiometricCredentials();
+          setHasBiometricCredentials(hasCredentials);
+        }
+      } catch (error) {
+        console.warn('⚠️ Error checking biometric support:', error);
+      }
+    };
+
+    checkBiometricSupport();
+  }, [checkBiometricAvailable, checkBiometricCredentials]);
 
   // Email validation handler
   const handleEmailChange = (text: string) => {
@@ -75,6 +108,7 @@ export default function LoginScreen() {
         );
       } else {
         await signIn(email, password);
+        await handleSuccessfulLogin();
       }
     } catch (error: any) {
       console.error('Auth error:', error);
@@ -84,7 +118,63 @@ export default function LoginScreen() {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    setBiometricLoading(true);
+    
+    try {
+      await signInWithBiometrics();
+      // If we get here, biometric auth was successful but we still need password
+      // The signInWithBiometrics will throw an error with email if successful
+    } catch (error: any) {
+      console.log('🔐 Biometric auth result:', error);
+      
+      if (error.biometricSuccess && error.email) {
+        // Biometric auth succeeded, pre-fill email and focus password
+        setEmail(error.email);
+        Alert.alert(
+          'Biometric Authentication Successful', 
+          'Please enter your password to complete sign in.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Biometric auth failed or was cancelled
+        Alert.alert(
+          'Biometric Authentication Failed', 
+          error.message || 'Please try again or use your password.',
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
 
+  const handleSuccessfulLogin = async () => {
+    // After successful login, offer to enable biometric auth
+    if (isBiometricAvailable && !hasBiometricCredentials && !isSignUp) {
+      Alert.alert(
+        'Enable Biometric Sign-In',
+        'Would you like to enable biometric authentication for faster sign-ins?',
+        [
+          { text: 'Not Now', style: 'cancel' },
+          { 
+            text: 'Enable', 
+            onPress: async () => {
+              try {
+                const success = await enableBiometricAuth(email);
+                if (success) {
+                  Alert.alert('Success', 'Biometric authentication has been enabled!');
+                  setHasBiometricCredentials(true);
+                }
+              } catch (error) {
+                console.error('Failed to enable biometric auth:', error);
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
 
   const validateInput = (): string | null => {
     if (!email.trim()) {
@@ -218,6 +308,32 @@ export default function LoginScreen() {
                isSignUp ? 'Create Account' : 'Sign In'}
             </Text>
           </TouchableOpacity>
+
+          {/* Biometric authentication button */}
+          {isBiometricAvailable && hasBiometricCredentials && !isSignUp && !isResetPassword && (
+            <>
+              <View style={styles.dividerContainer}>
+                <View style={[styles.divider, isDarkMode && styles.darkDivider]} />
+                <Text style={[styles.dividerText, isDarkMode && styles.darkDividerText]}>or</Text>
+                <View style={[styles.divider, isDarkMode && styles.darkDivider]} />
+              </View>
+              
+              <TouchableOpacity
+                style={[styles.biometricButton, isDarkMode && styles.darkBiometricButton]}
+                onPress={handleBiometricLogin}
+                disabled={biometricLoading}
+              >
+                <Ionicons 
+                  name={Platform.OS === 'ios' ? 'finger-print' : 'finger-print'} 
+                  size={24} 
+                  color={isDarkMode ? '#4dabf7' : '#007bff'} 
+                />
+                <Text style={[styles.biometricButtonText, isDarkMode && styles.darkBiometricButtonText]}>
+                  {biometricLoading ? 'Authenticating...' : 'Sign in with biometrics'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           {/* Toggle buttons */}
           <View style={styles.toggleContainer}>
@@ -384,6 +500,52 @@ const styles = StyleSheet.create({
   },
   darkErrorText: {
     color: '#ff6b6b',
+  },
+  
+  // Biometric authentication styles
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  darkDivider: {
+    backgroundColor: '#555',
+  },
+  dividerText: {
+    marginHorizontal: 15,
+    color: '#666',
+    fontSize: 14,
+  },
+  darkDividerText: {
+    color: '#aaa',
+  },
+  biometricButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#007bff',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  darkBiometricButton: {
+    borderColor: '#4dabf7',
+  },
+  biometricButtonText: {
+    color: '#007bff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  darkBiometricButtonText: {
+    color: '#4dabf7',
   },
 
 });

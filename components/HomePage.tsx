@@ -27,6 +27,7 @@ import { FirebaseAuth } from '../config/firebase';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { firebaseService } from '../services/FirebaseService';
 import { hybridSyncService } from '../services/HybridSyncService';
+import BiometricSettings from './BiometricSettings';
 import QRCode from 'react-native-qrcode-svg';
 import LogoutConfirmationModal from './LogoutConfirmationModal';
 import { StockDebugPanel } from './StockDebugPanel';
@@ -844,6 +845,9 @@ Last Check: ${new Date().toLocaleTimeString()}`,
                   {user?.displayName || user?.email || 'User'}
                 </Text>
               </View>
+
+              {/* Biometric Settings */}
+              <BiometricSettings containerStyle={styles.biometricSettingsItem} />
               
               {/* Organization Settings - Admin/Owner Only */}
               {(isAdmin || isOwner) && (
@@ -1256,6 +1260,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f8ff',
     borderRadius: 5,
     marginBottom: 5,
+  },
+  biometricSettingsItem: {
+    marginHorizontal: 0,
+    marginVertical: 4,
+    borderRadius: 5,
   },
   userText: {
     color: '#007bff',

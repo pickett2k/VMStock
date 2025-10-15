@@ -14,42 +14,13 @@
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease",
         "env": {
-          "FIREBASE_API_KEY": "$FIREBASE_API_KEY",
-          "FIREBASE_AUTH_DOMAIN": "$FIREBASE_AUTH_DOMAIN",
-          "FIREBASE_PROJECT_ID": "$FIREBASE_PROJECT_ID",
-          "FIREBASE_STORAGE_BUCKET": "$FIREBASE_STORAGE_BUCKET",
-          "FIREBASE_MESSAGING_SENDER_ID": "$FIREBASE_MESSAGING_SENDER_ID",
-          "FIREBASE_APP_ID": "$FIREBASE_APP_ID",
-          "FIREBASE_MEASUREMENT_ID": "$FIREBASE_MEASUREMENT_ID",
-          "ENABLE_ANALYTICS": "true",
-          "ENABLE_FIRESTORE_OFFLINE": "true",
-          "DEV_MODE": "false",
-          "STRIPE_ENABLED": "true",
-          "STRIPE_PUBLISHABLE_KEY": "$STRIPE_PUBLISHABLE_KEY",
-          "STRIPE_SECRET_KEY": "$STRIPE_SECRET_KEY",
-          "STRIPE_TERMINAL_LOCATION_ID": "$STRIPE_TERMINAL_LOCATION_ID",
-          "STRIPE_ENVIRONMENT": "test",
-          "STRIPE_TAP_TO_PAY_ENABLED": "$STRIPE_TAP_TO_PAY_ENABLED",
-          "STRIPE_READER_TYPE": "$STRIPE_READER_TYPE",
           "APP_ENV": "development",
-          "DEFAULT_CURRENCY": "$DEFAULT_CURRENCY"
+          "STRIPE_ENVIRONMENT": "test"
         }
       },
       "ios": {
         "env": {
-          "FIREBASE_API_KEY": "$FIREBASE_API_KEY",
-          "FIREBASE_AUTH_DOMAIN": "$FIREBASE_AUTH_DOMAIN",
-          "FIREBASE_PROJECT_ID": "$FIREBASE_PROJECT_ID",
-          "FIREBASE_STORAGE_BUCKET": "$FIREBASE_STORAGE_BUCKET",
-          "FIREBASE_MESSAGING_SENDER_ID": "$FIREBASE_MESSAGING_SENDER_ID",
-          "FIREBASE_APP_ID": "$FIREBASE_APP_ID",
-          "FIREBASE_MEASUREMENT_ID": "$FIREBASE_MEASUREMENT_ID",
-          "ENABLE_ANALYTICS": "true",
-          "ENABLE_FIRESTORE_OFFLINE": "true",
-          "DEV_MODE": "false",
-          "STRIPE_ENABLED": "false",
-          "APP_ENV": "development",
-          "DEFAULT_CURRENCY": "GBP"
+          "APP_ENV": "production"
         }
       }
     },
@@ -58,46 +29,11 @@
         "buildType": "apk", 
         "gradleCommand": ":app:assembleRelease",
         "env": {
-          "FIREBASE_API_KEY": "$FIREBASE_API_KEY",
-          "FIREBASE_AUTH_DOMAIN": "$FIREBASE_AUTH_DOMAIN",
-          "FIREBASE_PROJECT_ID": "$FIREBASE_PROJECT_ID",
-          "FIREBASE_STORAGE_BUCKET": "$FIREBASE_STORAGE_BUCKET",
-          "FIREBASE_MESSAGING_SENDER_ID": "$FIREBASE_MESSAGING_SENDER_ID",
-          "FIREBASE_APP_ID": "$FIREBASE_APP_ID",
-          "FIREBASE_MEASUREMENT_ID": "$FIREBASE_MEASUREMENT_ID",
-          "ENABLE_ANALYTICS": "true",
-          "ENABLE_FIRESTORE_OFFLINE": "true",
-          "DEV_MODE": "false",
-          "STRIPE_ENABLED": "true",
-          "STRIPE_PUBLISHABLE_KEY": "$STRIPE_PUBLISHABLE_KEY",
-          "STRIPE_SECRET_KEY": "$STRIPE_SECRET_KEY",
-          "STRIPE_TERMINAL_LOCATION_ID": "$STRIPE_TERMINAL_LOCATION_ID",
-          "STRIPE_ENVIRONMENT": "live",
-          "STRIPE_TAP_TO_PAY_ENABLED": "$STRIPE_TAP_TO_PAY_ENABLED",
-          "STRIPE_READER_TYPE": "$STRIPE_READER_TYPE",
-          "PAYMENT_MAX_AMOUNT": "$PAYMENT_MAX_AMOUNT",
-          "PAYMENT_CURRENCY": "$PAYMENT_CURRENCY",
-          "PAYMENT_REQUIRE_RECEIPT": "$PAYMENT_REQUIRE_RECEIPT",
-          "APP_ENV": "production",
-          "DEFAULT_CURRENCY": "GBP"
+          "STRIPE_ENVIRONMENT": "live"
         }
       },
       "ios": {
-        "env": {
-          "FIREBASE_API_KEY": "$FIREBASE_API_KEY",
-          "FIREBASE_AUTH_DOMAIN": "$FIREBASE_AUTH_DOMAIN",
-          "FIREBASE_PROJECT_ID": "$FIREBASE_PROJECT_ID",
-          "FIREBASE_STORAGE_BUCKET": "$FIREBASE_STORAGE_BUCKET",
-          "FIREBASE_MESSAGING_SENDER_ID": "$FIREBASE_MESSAGING_SENDER_ID",
-          "FIREBASE_APP_ID": "$FIREBASE_APP_ID",
-          "FIREBASE_MEASUREMENT_ID": "$FIREBASE_MEASUREMENT_ID",
-          "ENABLE_ANALYTICS": "true",
-          "ENABLE_FIRESTORE_OFFLINE": "true",
-          "DEV_MODE": "false",
-          "STRIPE_ENABLED": "false",
-          "APP_ENV": "production",
-          "DEFAULT_CURRENCY": "GBP"
-        }
+        "env": {}
       }
     }
   },

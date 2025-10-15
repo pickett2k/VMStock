@@ -18,6 +18,7 @@ import { runAllFirebaseAuthDebugChecks, debugFirebaseAppStatus } from '../utils/
 import { normalizeEmail, validateEmail, getEmailProvider } from '../utils/emailUtils';
 import { hybridSyncService } from '../services/HybridSyncService';
 import { BiometricAuthService } from '../services/BiometricAuthService';
+import { BiometricCredentialService } from '../services/BiometricCredentialService';
 import JWTPersistenceService from '../services/JWTPersistenceService';
 
 // Authentication context type
@@ -41,6 +42,12 @@ interface AuthContextType {
   // Biometric authentication
   isBiometricAvailable: () => Promise<boolean>;
   authenticateWithBiometrics: (reason?: string) => Promise<boolean>;
+  // Biometric credential management
+  signInWithBiometrics: () => Promise<void>;
+  enableBiometricAuth: (email: string) => Promise<boolean>;
+  disableBiometricAuth: () => Promise<boolean>;
+  isBiometricEnabled: () => Promise<boolean>;
+  hasBiometricCredentials: () => Promise<boolean>;
 }
 
 // Create context
@@ -539,6 +546,112 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Biometric credential management methods
+  const signInWithBiometrics = async (): Promise<void> => {
+    try {
+      console.log('🔐 Attempting biometric sign-in...');
+      
+      // Check if biometric auth is available and enabled
+      const isAvailable = await BiometricAuthService.isAvailable();
+      if (!isAvailable) {
+        throw new Error('Biometric authentication is not available on this device');
+      }
+
+      const isEnabled = await BiometricCredentialService.isBiometricEnabled();
+      if (!isEnabled) {
+        throw new Error('Biometric authentication is not enabled');
+      }
+
+      // Retrieve stored credentials using biometric auth
+      const credentials = await BiometricCredentialService.getCredentials();
+      if (!credentials) {
+        throw new Error('No biometric credentials found');
+      }
+
+      console.log('🔐 Retrieved biometric credentials for:', credentials.email);
+      
+      // For security reasons, we can't store actual passwords
+      // Instead, biometric auth will be used as a "remember me" feature
+      // The user will still need to enter their password after biometric verification
+      // This throws an error that the LoginScreen can catch and pre-fill the email
+      const biometricError = new Error('Biometric authentication successful') as any;
+      biometricError.email = credentials.email;
+      biometricError.biometricSuccess = true;
+      throw biometricError;
+      
+    } catch (error: any) {
+      console.error('❌ Biometric sign-in process:', error);
+      throw error; // Re-throw so LoginScreen can handle appropriately
+    }
+  };
+
+  const enableBiometricAuth = async (email: string): Promise<boolean> => {
+    try {
+      console.log('🔐 Enabling biometric authentication for:', email);
+      
+      // First verify that biometric auth is available
+      const isAvailable = await BiometricAuthService.isAvailable();
+      if (!isAvailable) {
+        throw new Error('Biometric authentication is not available on this device');
+      }
+
+      // Test biometric authentication first
+      const biometricResult = await BiometricAuthService.authenticate(
+        'Authenticate to enable biometric sign-in'
+      );
+      
+      if (!biometricResult.success) {
+        throw new Error('Biometric authentication failed');
+      }
+
+      // Store the email securely (no password stored for security)
+      const success = await BiometricCredentialService.storeCredentials(email);
+      if (!success) {
+        throw new Error('Failed to store biometric credentials');
+      }
+
+      console.log('✅ Biometric authentication enabled successfully');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Failed to enable biometric auth:', error);
+      return false;
+    }
+  };
+
+  const disableBiometricAuth = async (): Promise<boolean> => {
+    try {
+      console.log('🔐 Disabling biometric authentication...');
+      
+      const success = await BiometricCredentialService.setBiometricEnabled(false);
+      if (success) {
+        console.log('✅ Biometric authentication disabled');
+      }
+      
+      return success;
+    } catch (error: any) {
+      console.error('❌ Failed to disable biometric auth:', error);
+      return false;
+    }
+  };
+
+  const isBiometricEnabled = async (): Promise<boolean> => {
+    try {
+      return await BiometricCredentialService.isBiometricEnabled();
+    } catch (error) {
+      console.warn('⚠️ Error checking biometric enabled status:', error);
+      return false;
+    }
+  };
+
+  const hasBiometricCredentials = async (): Promise<boolean> => {
+    try {
+      return await BiometricCredentialService.hasStoredCredentials();
+    } catch (error) {
+      console.warn('⚠️ Error checking biometric credentials:', error);
+      return false;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -557,7 +670,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     authReady,
     isEmailVerified,
     isBiometricAvailable,
-    authenticateWithBiometrics
+    authenticateWithBiometrics,
+    signInWithBiometrics,
+    enableBiometricAuth,
+    disableBiometricAuth,
+    isBiometricEnabled,
+    hasBiometricCredentials
   };
 
   return (
