@@ -100,6 +100,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
 
   const loadOrganization = async () => {
     try {
+      console.log('🔍 OrganizationContext - Starting organization load from cache...');
       const storedData = await AsyncStorage.getItem(STORAGE_KEY);
       if (storedData) {
         const orgData = JSON.parse(storedData);
@@ -111,6 +112,13 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         if (orgData.id) {
           firebaseService.setOrganizationId(orgData.id);
           console.log('🔧 OrganizationContext - Set FirebaseService organization ID:', orgData.id);
+          
+          // CRITICAL: Give a moment for FirebaseService to register the organization
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Verify FirebaseService is ready
+          const isReady = firebaseService.isReady();
+          console.log('✅ FirebaseService readiness after organization load:', isReady);
         } else {
           console.error('❌ OrganizationContext - Organization has no ID:', orgData);
         }
@@ -118,12 +126,15 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         // If organization is already loaded, we've effectively "checked" for existing users
         setHasCheckedExistingUser(true);
         console.log('✅ OrganizationContext - Loaded existing organization, marking user check as complete');
+      } else {
+        console.log('🔍 OrganizationContext - No stored organization found');
       }
       // Note: If no stored organization, AuthWrapper will trigger checkExistingUserOrganization
     } catch (error) {
-      console.error('Error loading organization data:', error);
+      console.error('❌ Error loading organization data:', error);
     } finally {
       setLoading(false);
+      console.log('✅ OrganizationContext - Organization loading complete, setting loading to false');
     }
   };
 

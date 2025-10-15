@@ -90,12 +90,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if FirebaseService is ready (organization ID is set)
       if (!firebaseService.isReady()) {
         console.log('🔍 FirebaseService not ready (no organization ID set), skipping role check');
+        console.log('🔍 This is normal during app startup - role check will retry when organization loads');
         // Set defaults but don't error - role check will be called again when organization is set
         setIsAdmin(false);
         setIsOwner(false);
         setAssignedPlayer(null);
         return;
       }
+
+      console.log('✅ FirebaseService is ready, proceeding with role check');
 
       // Check if user is an admin (has staff record)
       console.log('🔍 Checking user role for UID:', currentUser.uid);
@@ -169,11 +172,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Extended fallback timeout (MD file recommendation: don't rush Firebase restoration)
     const initializationTimeout = setTimeout(() => {
       if (!authInitialized) {
-        console.warn('⚠️ Firebase Auth initialization timeout after 15s - forcing initialization');
+        console.warn('⚠️ Firebase Auth initialization timeout after 20s - forcing initialization');
+        console.warn('⚠️ This may indicate network issues or SecureStore persistence problems');
         setAuthInitialized(true);
         setLoading(false);
       }
-    }, 15000); // Extended from 3s to 15s to give Firebase more time
+    }, 20000); // Extended from 15s to 20s to give more patience for auth persistence
 
     // Debug: Check Firebase app status at startup
     debugFirebaseAppStatus();
@@ -215,9 +219,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, 2000);
         
         // Use setTimeout to ensure user state is updated first
+        // CRITICAL: Longer delay to allow OrganizationContext to set FirebaseService org ID
         setTimeout(async () => {
-          await checkUserRole();
-        }, 100);
+          try {
+            console.log('🔍 Running initial role check after auth...');
+            await checkUserRole();
+          } catch (error) {
+            console.warn('⚠️ Initial role check failed (expected during startup), will retry:', error);
+            // Don't throw here - the polling mechanism will retry
+          }
+        }, 1000); // Increased from 100ms to 1000ms to give organization loading time
         
         // Save JWT token to SecureStore for enhanced persistence
         try {
@@ -293,7 +304,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user || !authInitialized) return;
 
     let attempts = 0;
-    const maxAttempts = 30; // Check for 15 seconds (30 * 500ms)
+    const maxAttempts = 60; // Extended to 30 seconds (60 * 500ms) for more patience
 
     // Check if we need to do a role check when Firebase service becomes ready
     const checkFirebaseServiceReadiness = async () => {
@@ -301,24 +312,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isReady = firebaseService.isReady();
       console.log(`🔍 AuthContext - FirebaseService ready check #${attempts}: ${isReady}`);
       
-      if (isReady && (!isAdmin && !isOwner && !assignedPlayer)) {
+      if (isReady) {
         console.log('🔍 FirebaseService is now ready, triggering delayed role check');
         clearInterval(checkInterval);
         clearTimeout(timeout);
-        await checkUserRole();
+        
+        // CRITICAL: Wait a moment for organization context to fully stabilize
+        setTimeout(async () => {
+          try {
+            await checkUserRole();
+          } catch (error) {
+            console.warn('⚠️ Role check failed, retrying in 2 seconds:', error);
+            setTimeout(() => checkUserRole(), 2000);
+          }
+        }, 500);
       } else if (attempts >= maxAttempts) {
-        console.log('⚠️ AuthContext - FirebaseService readiness timeout after 15 seconds');
+        console.warn('⚠️ AuthContext - FirebaseService readiness timeout after 30 seconds');
+        console.log('⚠️ This may indicate organization loading issues - check OrganizationContext');
         clearInterval(checkInterval);
+        
+        // Try one more role check anyway - user might be in a working state
+        try {
+          await checkUserRole();
+        } catch (error) {
+          console.error('❌ Final role check attempt failed:', error);
+        }
       }
     };
 
     // Start with more frequent polling (every 500ms)
     const checkInterval = setInterval(checkFirebaseServiceReadiness, 500);
     
-    // Clean up after 15 seconds
+    // Clean up after 30 seconds
     const timeout = setTimeout(() => {
       clearInterval(checkInterval);
-    }, 15000);
+    }, 30000);
 
     checkFirebaseServiceReadiness();
 

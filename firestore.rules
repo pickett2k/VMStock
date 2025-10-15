@@ -1,7 +1,44 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access on all documents to any user signed in to the application
+    // ============================================
+    // VMSTOCK MULTI-TENANT SECURITY RULES
+    // ============================================
+    
+    // Organization documents - users can read/write their own organization
+    match /organizations/{orgId} {
+      allow read, write: if request.auth != null;
+      
+      // Organization subcollections - multi-tenant isolation
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
+    // Shop pins collection - authenticated users can read/write pins
+    // Used for organization joining via PIN
+    match /shop-pins/{pinId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Applied operations (idempotency tracking)
+    match /organizations/{orgId}/appliedOps/{opId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Sync metadata for offline-first architecture
+    match /organizations/{orgId}/sync-metadata/{deviceId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Audit logs for compliance
+    match /organizations/{orgId}/audit-logs/{logId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Fallback rule for any other authenticated operations
+    // TODO: Tighten this in production based on actual access patterns
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

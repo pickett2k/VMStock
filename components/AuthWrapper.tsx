@@ -44,12 +44,16 @@ export default function AuthWrapper() {
 
   // Show loading spinner while Firebase Auth is initializing or checking auth state
   // CRITICAL: Wait for authInitialized to prevent premature login screen show
+  // CRITICAL: Also wait for organization loading to complete to prevent race conditions
   if (!authInitialized || authLoading || orgLoading) {
     return (
       <View style={[styles.loadingContainer, isDarkMode && styles.darkLoadingContainer]}>
         <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#007bff'} />
         <Text style={[styles.loadingText, isDarkMode && styles.darkLoadingText]}>
-          {!authInitialized ? 'Initializing...' : orgLoading ? 'Loading organization...' : 'Please wait...'}
+          {orgLoading ? 'Loading organization...' : !authInitialized ? 'Initializing auth...' : 'Please wait...'}
+        </Text>
+        <Text style={[styles.subText, isDarkMode && styles.darkSubText]}>
+          {orgLoading ? 'Setting up Firebase connections...' : !authInitialized ? 'Restoring your session...' : 'Almost ready...'}
         </Text>
       </View>
     );
@@ -128,5 +132,14 @@ const styles = StyleSheet.create({
   },
   darkLoadingText: {
     color: '#ccc',
+  },
+  subText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+  },
+  darkSubText: {
+    color: '#aaa',
   },
 });
